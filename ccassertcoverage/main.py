@@ -48,22 +48,26 @@ def getTests(path):
 
 
 def getTemplate(path):
-    template = {}
-    templatePath = path + '/{{ cookiecutter.project_name }}'
-    current_tree = os.walk(templatePath)
+    templatedata = {'files': {}, 'variables': {}}
+    templatepath = path + '/{{ cookiecutter.project_name }}'
+    current_tree = os.walk(templatepath)
 
     for row in current_tree:
         for filename in row[2]:
-            file = open(row[0] + '/' + filename, 'r')
+            fullpath = row[0] + '/' + filename
+            file = open(fullpath, 'r')
             lines = file.readlines()
             for line in lines:
                 if 'cookiecutter.' in line:
                     match = re.search('cookiecutter\.[A-Za-z_]*\ ', line)
                     variable = match.group(0).split('.')[-1].strip()
-                    if variable not in template.keys():
-                        template[variable] = []
-                    template[variable].append({'file': filename, 'path': row[0]})
-    return template
+                    if variable not in templatedata['variables'].keys():
+                        templatedata['variables'][variable] = []
+                    templatedata['variables'][variable].append({'file': filename, 'path': row[0]})
+                    if fullpath not in templatedata['files'].keys():
+                        templatedata['files'][fullpath] = []
+                    templatedata['files'][fullpath].append(variable)
+    return templatedata
 
 
 curr_dir = os.getcwd()
