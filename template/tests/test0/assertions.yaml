@@ -1,2 +1,3 @@
 assertions:
-  - filematches someFile expectedFile
+  - filematches rootdir/templatizedfile expectedFile
+  - filematches rootdir/subdirectory/anothertemplatizedfile expectedFile

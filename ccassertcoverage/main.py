@@ -1,3 +1,4 @@
+import json
 import os
 import re
 
@@ -46,13 +47,33 @@ def get_tests(path):
     return tests
 
 
+def get_project_name(test):
+    if 'project_name' in test['variables']:
+        configfile = test['testPath'] + '/config.yaml'
+        with open(configfile, 'r') as yamlConfigFile:
+            configdata = yaml.load(yamlConfigFile, Loader=yaml.FullLoader)
+            return configdata['default_context']['project_name']
+    else:
+        path = test['testPath'].rsplit('/', 2)[0]
+        configfile = path + '/defaultConfig.yaml'
+        with open(configfile, 'r') as yamlConfigFile:
+            configdata = yaml.load(yamlConfigFile, Loader=yaml.FullLoader)
+            if 'project_name' in configdata['default_context'].keys():
+                return configdata['default_context']['project_name']
+            else:
+                configfile = path + '/cookiecutter.json'
+                with open(configfile, 'r') as cookiecutterJson:
+                    configdata = json.load(cookiecutterJson)
+                    return configdata['project_name']
+
+
 def get_target_files(tests):
     files = []
     for test in tests:
-        for rule in test.rules:
+        for rule in test['rules']:
+            print(rule)
             if 'filematches' in rule:
-                files.append(
-                    filter(lambda element: element != 'filematches' and element not in test.expectedFiles, rule))
+                files.extend(filter(lambda element: element != 'filematches' and element not in test['expectedFiles'], rule))
     return files
 
 
@@ -73,26 +94,29 @@ def get_template(path):
                     if variable not in templatedata['variables'].keys():
                         templatedata['variables'][variable] = []
                     templatedata['variables'][variable].append({'file': filename, 'path': row[0]})
-                    if fullpath not in templatedata['files'].keys():
-                        templatedata['files'][fullpath] = []
-                    templatedata['files'][fullpath].append(variable)
+                    key = (row[0].replace(templatepath, '') + '/' + filename).replace('/', '', 1)
+                    if key not in templatedata['files'].keys():
+                        templatedata['files'][key] = []
+                    templatedata['files'][key].append(variable)
     return templatedata
 
 
 # curr_dir = os.getcwd()
 curr_dir = '../template'
 
+# get list of files referenced in tests
 tests = get_tests(curr_dir)
 print(f'Tests -> {tests}')
+target_files = get_target_files(tests)
+print(f'Target Files -> {target_files}')
+
+# get templatized files
 template = get_template(curr_dir)
 print(f'Template -> {template}')
-# get list of files referenced it tests
-# target_files = get_target_files(tests)
-# print(f'Target Files -> {target_files}')
+templatized_files = template['files'].keys()
+print(f'Templatized Files -> {templatized_files}')
+
 # percentage of files with variables that are verified by a test
-# # get templatized files
-# templatized_files = template['files'].keys()
-# print(f'Templatized Files -> {templatized_files}')
 # filename -> list of tests
 # list files with variables not verified by a test
 
