@@ -35,7 +35,6 @@ def get_expected_files(files):
 def get_tests(path):
     tests = []
     current_tree = os.walk(path + '/tests')
-
     for row in current_tree:
         if 'assertions.yaml' in row[2] and 'config.yaml' in row[2]:
             test = {'testPath': row[0],
@@ -46,12 +45,14 @@ def get_tests(path):
             tests.append(test)
     return tests
 
+
 def get_target_files(tests):
     files = []
     for test in tests:
         for rule in test.rules:
             if 'filematches' in rule:
-                files.append(filter(lambda element: element != 'filematches' and element not in test.expecktedFiles, rule))
+                files.append(
+                    filter(lambda element: element != 'filematches' and element not in test.expectedFiles, rule))
     return files
 
 
@@ -77,18 +78,21 @@ def get_template(path):
                     templatedata['files'][fullpath].append(variable)
     return templatedata
 
-curr_dir = os.getcwd()
+
+# curr_dir = os.getcwd()
+curr_dir = '../template'
+
 tests = get_tests(curr_dir)
-print(tests)
+print(f'Tests -> {tests}')
 template = get_template(curr_dir)
-print(template)
-targetFiles = get_target_files(tests)
-
+print(f'Template -> {template}')
+# get list of files referenced it tests
+# target_files = get_target_files(tests)
+# print(f'Target Files -> {target_files}')
 # percentage of files with variables that are verified by a test
-# get files with variables
-fileswithvariables = template['files'].keys()
-
-
+# # get templatized files
+# templatized_files = template['files'].keys()
+# print(f'Templatized Files -> {templatized_files}')
 # filename -> list of tests
 # list files with variables not verified by a test
 

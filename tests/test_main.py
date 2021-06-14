@@ -4,10 +4,12 @@ import yaml
 
 test_name = 'testName'
 path = f'some/path/with/{test_name}'
+file = 'expectedFile'
+files = ['assertions.yaml', 'config.yaml', file]
 variable_name = 'variable'
 config = {'default_context': {}}
 config['default_context'][variable_name] = 'value'
-assertion = 'filematches someFile expectedFile'
+assertion = f'filematches someFile {file}'
 assertions = {'assertions': []}
 assertions['assertions'].append(assertion)
 
@@ -39,11 +41,28 @@ def test_get_rules_should_return_a_list_of_rules_assertions_given_a_test_directo
 
 
 def test_get_expected_files_should_not_contain_assertions_or_config():
-    files = ['assertions.yaml', 'config.yaml', 'expectedFile']
-
     actual = main.get_expected_files(files)
 
-    assert actual == ['expectedFile']
+    assert actual == [file]
 
 
-# def test_get_tests_should_return_a_list_of_tests_given_path():
+@patch('yaml.load')
+@patch('os.walk')
+@patch('builtins.open', new_callable=mock_open, read_data=yaml.dump(config))
+def test_get_tests_should_return_a_list_of_tests_given_path(mock_file, mock_tree, mock_load):
+    mock_tree.return_value = [(path, [], files)]
+    mock_load.side_effect = [config, assertions]
+
+    expected = [
+        {
+            'testPath': path,
+            'testName': test_name,
+            'variables': [variable_name],
+            'rules': [assertion.split()],
+            'expectedFiles': [file]
+        }
+    ]
+
+    actual = main.get_tests('../template')
+
+    assert actual == expected
